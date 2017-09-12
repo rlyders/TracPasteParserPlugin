@@ -1,0 +1,13 @@
+[run]
+branch = True
+source =
+    TicketFieldParser
+
+[paths]
+source =
+   src/TicketFieldParser
+   .tox/*/lib/python*/site-packages/TicketFieldParser
+   .tox/pypy/site-packages/TicketFieldParser
+
+[report]
+show_missing = True

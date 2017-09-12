@@ -1,16 +1,17 @@
 [components]
-ticketfieldparser.ticketfieldparser.ticketfieldparser = enabled
+pasteparser.pasteparser.pasteparser = enabled
 
-[ticket-field-parser]
+[paste-parser]
+debug_on = true
 field_name_to_id_match = .*
 field_name_to_id_replace = field-$&
 field_to_parse = description
-ignore_line_pattern = -+
-key_value_delimiter = :
-pasted_text_pattern = FULL REQUEST INFORMATION FOLLOWS\.*\s*(.*)
-debug_on = false
+ignore_pattern = 
+key_value_delimiter = \:
+key_value_end_pattern = ^-{36}$
+pasted_text_pattern = FULL REQUEST INFORMATION FOLLOWS\.*\s*([\s\S]*)
 
-[ticket-field-parser-xref]
+[paste-parser-xref]
 benefits.source_key = Business Justification
 business_benefit.source_key = Business Benefit
 business_unit.source_key = Company ID

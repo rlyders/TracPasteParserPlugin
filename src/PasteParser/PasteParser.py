@@ -36,13 +36,13 @@ from trac.web.api import IRequestFilter
 from trac.web.chrome import ITemplateProvider, add_script, add_script_data
 import json
  
-SCRIPT_VARIABLE_NAME = 'ticket_field_parser_config'
+SCRIPT_VARIABLE_NAME = 'paste_parser_config'
 
 class PasteParser(Component):
 
     implements(IRequestFilter, ITemplateProvider)
 
-    ticket_field_parser_section = ConfigSection('ticket-field-parser',
+    paste_parser_section = ConfigSection('paste-parser',
         """ When text is pasted into the designated field of a new ticket
             this plugin can parse that pasted text and populate the results
             into other ticket fields as defined by these configuration options.
@@ -53,12 +53,12 @@ class PasteParser(Component):
             the user to review and adjust as needed before saving. 
         """)
 
-    ticket_field_parser_xref_section = ConfigSection('ticket-field-parser-xref',
+    paste_parser_xref_section = ConfigSection('paste-parser-xref',
         """ These section contains all the information related to the fields that 
         should be searched for in the pasted text.
         """)
 
-    pasted_text_pattern = Option('ticket-field-parser', 'pasted_text_pattern',
+    pasted_text_pattern = Option('paste-parser', 'pasted_text_pattern',
         doc="""This is the regular expression pattern that this plugin will
                attempt to match against the text pasted into the designated field of a new 
                ticket. If this pattern does not find a match within the pasted text, then 
@@ -67,35 +67,35 @@ class PasteParser(Component):
                attempt to parse the matched text based on the the definitions in 
                this config and populate the resulting values into the related ticket fields.""")
 
-    key_value_delimiter = Option('ticket-field-parser', 'key_value_delimiter',
+    key_value_delimiter = Option('paste-parser', 'key_value_delimiter',
         doc="""This is the delimiter that will be appended to all given 'source_key' strings (the source line attribute label)
         when attempting to match field labels in the pasted designated field text.""")
 
-    ignore_pattern = Option('ticket-field-parser', 'ignore_pattern',
+    ignore_pattern = Option('paste-parser', 'ignore_pattern',
         doc="""This is the regular expression that defines which strings within the 
         pasted text should be ignored/skipped and not be parsed for key-values These strings
         are stripped out of the input string prior to processing.""")
 
-    field_to_parse = Option('ticket-field-parser', 'field_to_parse',
+    field_to_parse = Option('paste-parser', 'field_to_parse',
         doc="""This is the name of the ticket field to be parsed. To get the actual DOM element for this field,
         this field name will be converted to the ID of the field's DOM element via a regexp replace
         with the field_name_to_id_match as the match pattern and the field_name_to_id_replace as the
         replacement pattern.""")
 
-    field_name_to_id_match = Option('ticket-field-parser', 'field_name_to_id_match',
+    field_name_to_id_match = Option('paste-parser', 'field_name_to_id_match',
         doc="""This is a regexp matching pattern that will be used to match against the designated field name
         and then the field_name_to_id_replace will be used as the replacement pattern 
         to convert the field name to an ID so that we can get the actual DOM element for this field.""")
 
-    field_name_to_id_replace = Option('ticket-field-parser', 'field_name_to_id_replace',
+    field_name_to_id_replace = Option('paste-parser', 'field_name_to_id_replace',
         doc="""This is a regexp replacement pattern that will be used in conjunction with the field_name_to_id_match
         to convert the field name to an ID so that we can get the actual DOM element for this field.""")
 
-    key_value_end_pattern = Option('ticket-field-parser', 'key_value_end_pattern',
+    key_value_end_pattern = Option('paste-parser', 'key_value_end_pattern',
         doc="""This optional regexp matching pattern defines the end of each key/value pair. If not given, a new line 
         determines the end. This is useful if values span multiple lines.""")
 
-    debug_on = Option('ticket-field-parser', 'debug_on',
+    debug_on = Option('paste-parser', 'debug_on',
         doc="""If set to true, extensive debugging will be sent to the browser's console.""")
 
 
@@ -104,10 +104,10 @@ class PasteParser(Component):
            that define how to parse the pasted designated field text.
            Based on _get_ticket_groups() from Trac v1.2 trac/ticket/roadmap.py
         """
-        if 'ticket-field-parser-xref' in self.config:
+        if 'paste-parser-xref' in self.config:
             xrefs = {}
             order = 0
-            for field_name, value in self.ticket_field_parser_xref_section.options():
+            for field_name, value in self.paste_parser_xref_section.options():
                 qualifier = 'regexp' 
                 if '.' in field_name:
                     field_name, qualifier = field_name.split('.', 1)
@@ -134,7 +134,7 @@ class PasteParser(Component):
         if template == 'ticket.html' and req.path_info == '/newticket':
             add_script(req, 'PasteParser/js/PasteParser.js')
             
-            ticket_field_parser_config = { 
+            paste_parser_config = { 
                 'pasted_text_pattern':      self.pasted_text_pattern,
                 'key_value_delimiter':      self.key_value_delimiter,
                 'ignore_pattern':           self.ignore_pattern,
@@ -145,8 +145,8 @@ class PasteParser(Component):
                 'debug_on': self.debug_on,
                 'xrefs': self._get_xref()
                 }
-            self.log.debug('[PasteParser] json.dumps(ticket_field_parser_config)='+json.dumps(ticket_field_parser_config));
-            add_script_data(req, {SCRIPT_VARIABLE_NAME: ticket_field_parser_config})
+            self.log.debug('[PasteParser] json.dumps(paste_parser_config)='+json.dumps(paste_parser_config));
+            add_script_data(req, {SCRIPT_VARIABLE_NAME: paste_parser_config})
 
         return template, data, content_type
 

@@ -32,7 +32,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 jQuery(document).ready(function ($) {
 	
-	/*  GLOBAL: ticket_field_parser_config 
+	/*  GLOBAL: paste_parser_config 
 	 *   This global is created using in post_process_request() in PasteParser.py which calls 
 	 *   trac.web.chrome.add_script_data
 	 *   
@@ -46,13 +46,13 @@ jQuery(document).ready(function ($) {
 	/* the name of the Trac ticket field that the user will paste text into to be parsed
 	 * NOTE: the actual DOM field name and field ID are prefixed with 'field-/_' by default.
 	 */
-	var field_to_parse = ticket_field_parser_config['field_to_parse'];
+	var field_to_parse = paste_parser_config['field_to_parse'];
 
 	/*
 	 * set to false to avoid any debug message being sent to the
 	 *  console or alert dialogs
 	 */
-	var dbg_on = (ticket_field_parser_config['debug_on'].toLowerCase() == 'true' ? true : false);
+	var dbg_on = (paste_parser_config['debug_on'].toLowerCase() == 'true' ? true : false);
 	
 	/*
 	 * sends message to console.log (or alert dialog if display_alert) as long as 
@@ -412,7 +412,7 @@ jQuery(document).ready(function ($) {
 	 * Main procedure that uses a DOM event to 
 	 *   1) get the text that was pasted into a DOM field
 	 *   2) parse the pasted text into key/value pairs
-	 *   3) map the key/value pairs to field names defined in a config from a global var named ticket_field_parser_config
+	 *   3) map the key/value pairs to field names defined in a config from a global var named paste_parser_config
 	 *   4) translate the values of each key/value pair using as defined in the config
 	 *   5) populate the resulting values to the proper field object in the DOM
 	 *  
@@ -424,8 +424,8 @@ jQuery(document).ready(function ($) {
         dbg('pasted_text='+pasted_text);
 
 		//pattern to match against the pasted text to determine if we should do anything with it 
-        var pasted_text_pattern = ticket_field_parser_config['pasted_text_pattern'];
-		dbg('ticket_field_parser_config=', ticket_field_parser_config);
+        var pasted_text_pattern = paste_parser_config['pasted_text_pattern'];
+		dbg('paste_parser_config=', paste_parser_config);
 	
 		dbg('pasted_text_pattern='+pasted_text_pattern);
 		        
@@ -442,15 +442,15 @@ jQuery(document).ready(function ($) {
 			var text_to_parse = pasted_text_matches[1];
 			dbg('text_to_parse[len='+text_to_parse.length+']='+text_to_parse);
 			// delimiter that separates each key/value pair on each line
-			var key_value_delimiter = ticket_field_parser_config['key_value_delimiter'];
+			var key_value_delimiter = paste_parser_config['key_value_delimiter'];
 			// optional pattern that determines strings to be ignored/skipped during processing
-			var ignore_pattern = ticket_field_parser_config['ignore_pattern'];
+			var ignore_pattern = paste_parser_config['ignore_pattern'];
 
 			// optional pattern that defines the end of each key/value pair
-			var key_value_end_pattern = ticket_field_parser_config['key_value_end_pattern'];
+			var key_value_end_pattern = paste_parser_config['key_value_end_pattern'];
 						
 			// cross-reference that defines relationship between the pasted key/value pairs and fields in the DOM
-			var xrefs = ticket_field_parser_config['xrefs'];							        	
+			var xrefs = paste_parser_config['xrefs'];							        	
 
 			// the associative array (an object) of key/value pairs parsed from the given string of lines
 			var key_values = parse_key_values(text_to_parse, key_value_delimiter, ignore_pattern, key_value_end_pattern);
@@ -476,15 +476,15 @@ jQuery(document).ready(function ($) {
 	 *  @param  field_name      the name of the field that will be used to get the field's ID
 	 *  @return                 given field's ID
 	 *  
-	 *  @see    ticket_field_parser_config  (global defined at top) 
+	 *  @see    paste_parser_config  (global defined at top) 
 	 */
 	function get_field_id(field_name) {
 		// the DOM ID of the given field that will be returned
 		var field_id;
 		// regexp matching pattern used to convert the field_name to the field ID of the field's DOM object 		
-		var field_name_to_id_match = ticket_field_parser_config['field_name_to_id_match'];
+		var field_name_to_id_match = paste_parser_config['field_name_to_id_match'];
 		// regexp replace pattern used to convert the field_name to the field ID of the field's DOM object
-		var field_name_to_id_replace = ticket_field_parser_config['field_name_to_id_replace'];
+		var field_name_to_id_replace = paste_parser_config['field_name_to_id_replace'];
 		// make sure the field name is not empty
 		if (field_name && field_name.length) {
 			// make sure match pattern is not empty 

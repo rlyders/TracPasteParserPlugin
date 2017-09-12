@@ -4,7 +4,7 @@ pkg_resources.require('Trac >= 1.2')
 __version__ = "1.1.1.dev0"
 
 __title__ = "PasteParser"
-__description__ = "This plugin for Trac 1.2+ parses text pasted by the user into the description of a ticket. Triggered off a 'paste' event, this JavaScript parser intercepts the pasted text, parses it, transforms it, and maps it to the appropriate ticket fields based on flexible configuration rules defined in trac.ini. Tested in IE 11, Chrome 60.0, and Firefox 54.0."
+__description__ = "Plugin for Trac 1.2+ that intercepts pasted text, parses it into key/value pairs, transforms the values via regex and JavaScript, and populates fields with those values. Flexible configuration rules defined in trac.ini allow a lot of customization. Tested in IE 11, Chrome 60.0, and Firefox 54.0."
 __uri__ = "http://lyders.com/"
 __doc__ = __description__ + " <" + __uri__ + ">"
 

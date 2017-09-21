@@ -194,7 +194,7 @@ jQuery(document).ready(function ($) {
 	 * Returns an associative array (an object) of mapped key/value pairs based on the 
 	 * simple 'source_key' field mappings in the given xref 
 	 *  
-	 *  @param  key_values       string of lines to be parsed
+	 *  @param  key_values       array of key/value pairs to be mapped
 	 *  @param  xrefs            an ordered array of field mappings to use to generate the mapped key/value pairs
 	 *  @return                  the associative array (an object) of mapped key/value pairs
 	 */
@@ -261,6 +261,56 @@ jQuery(document).ready(function ($) {
 	    	return str.replace(new RegExp(escapeRegExp(find), 'g'), replace);
 	    else
 	    	return '';
+	}
+	
+	/*
+	 * Convert the given associative array (an object) of key/value pairs using the 
+	 * conversion rules defined in the trac.ini. 
+	 *  
+	 *  @param  field_values     associative array (an object) of key/value pairs to be converted
+	 *  @param  xrefs            an ordered array of field mappings to use to translate the given field_values 
+	 */
+	function convert_field_value(field_values, xrefs) {
+		// loop through the given associative array (an object) of field values to that might need to be converted
+		for (field_name in field_values) {
+			// ensure key is not unexpected results of inheritance:
+			if (field_values.hasOwnProperty(field_name)) {
+				// the field value to be checked for conversions
+				let field_value = field_values[field_name].trim();
+		    	for(xref_idx=0,xrefs_len=xrefs.length;xref_idx<xrefs_len;xref_idx++){
+					//this is the field mapping object or XREF
+		    		let xref = xrefs[xref_idx];
+		    		// this is the name of the field that may have conversions. 
+					let xref_name = xrefs[xref_idx]['name'];
+					if (xref_name == field_name) {
+						//does the field have any conversions defined in the xref?
+						if (xref.hasOwnProperty('conversions')) {
+							//split the conversions string into an array of conversions
+				            conversions = xref['conversions'].split('\n');
+				            // loop through all conversions for this field to check for a match on the field's value
+				        	for(var conversion_idx=0,conversions_len=conversions.length; conversion_idx < conversions_len; conversion_idx++){
+				        		// this is the current conversion to check for a match
+				        		let conversion = conversions[conversion_idx];
+				        		dbg('conversion='+conversion);
+				        		//split the conversion string into a FROM and a TO
+				        		conversion_parts = conversion.split('=>');
+				        		conversion_from = conversion_parts[0];
+				        		conversion_to = conversion_parts[1];
+				        		var re = new RegExp(conversion_from, 'i');
+				        		dbg('conversion re='+re.toString()+" ? "+field_value);
+				        		// check if the FROM value matches the field's current value
+				        		if ((field_value == conversion_from) || re.test(field_value)) {
+				        			//if the field's current value matches the conversion FROM, 
+				        			// then convert it to the TO value
+				        			field_values[field_name] = conversion_to;
+					        		dbg('converted "'+field_value+'" to "'+field_values[field_name]+'"');
+				        		}
+				        	}
+						}
+					}
+		    	}
+			}
+		}
 	}
 	
 	/*
@@ -362,6 +412,11 @@ jQuery(document).ready(function ($) {
 	 */
 	function populate_field_values(field_values) {
 		// loop through the given associative array (an object) of final field values to be assigned to the DOM
+		var fields_not_found_in_DOM = "";
+		var values_not_in_list = "";
+		var key_value_delimiter = paste_parser_config['key_value_delimiter'].replace("\\", "");
+		// var used to track if the value to be assigned exists as a valid value for RADIO input or a SELECT list of options
+		var val_exists = false;
 		for (field_name in field_values) {
 			// ensure key is not unexpected results of inheritance:
 			if (field_values.hasOwnProperty(field_name)) {
@@ -373,13 +428,105 @@ jQuery(document).ready(function ($) {
 				dbg('[populate_field_values] fieldId='+fieldId );
 				// the field's DOM object
 				var field = $('#'+fieldId);
-				// if the field's DOM objects was found, then populate it with the field's new value
-				if (field.length > 0) {
+				// if a standard input field wasn't found...
+				if (field.length == 0) {
+					var DOM_field_name = 'field_'+field_name;
+					dbg("Standard input field not found, so checking for radio buttons: "+DOM_field_name);
+					// Check for a collection of radio buttons...
+					var DOM_radio_selector = 'input[type=radio][name='+DOM_field_name+']'; 
+					field = $(DOM_radio_selector, '#propertyform');
+					if (field.length > 0) {
+						dbg('Radio button field type: '+typeof(field));
+						dbg('Radio button dump: '+field);
+						
+						//loop through the options in the SELECT item
+						$(DOM_radio_selector, '#propertyform').each(function()
+								{	dbg("Check value is in list: "+fieldId+"["+field_value+"]?="+$(this).val());
+									//if the field value exists in the list of options for the SELECT list 
+								    if (field_value == $(this).val()) {
+								    	// flag it .. we are safe to set the value 
+								    	val_exists = true;							    								    	
+								    }
+								});
+					}
+					// if the value exists in the SELECT list of options
+					if (val_exists) {
+						// assign the value
+						//FROM: https://stackoverflow.com/a/17994198/5572674
+						// if you want to check one radio button, you MUST pass the value as an array
+						field.val([field_value]);
+					} else {
+						// record the invalid value to inform the user we couldn't set the value
+						values_not_in_list += field_name+key_value_delimiter+' '+field_value+"\n";						
+					}
+				} else if (field.length > 0) {
+					// standard input field was found, so process try to update it
 					dbg('[populate_field_values] '+fieldId+'=', field );
 					dbg('[populate_field_values] '+fieldId+'.val() PRE: '+field.val());
-					field.val(field_value);
+					
+					// is this a radio button
+					if($(field).is("select")) {
+						dbg("Field is a select field:"+field_name);
+						// if this a SELECT item, then check that the field value exists in the list 
+						//FROM: https://stackoverflow.com/questions/590163/how-to-get-all-options-of-a-select-using-jquery
+						//loop through the options in the SELECT item
+						$("#"+fieldId+" option").each(function()
+								{	dbg("Check value is in list: "+fieldId+"["+field_value+"]?="+$(this).val());
+									//if the field value exists in the list of options for the SELECT list 
+								    if (field_value == $(this).val()) {
+								    	// flag it .. we are safe to set the value 
+								    	val_exists = true;							    								    	
+								    }
+								});
+						// if the value exists in the SELECT list of options
+						if (val_exists) {
+							// assign the value
+							field.val(field_value);
+						} else {
+							// record the invalid value to inform the user we couldn't set the value
+							values_not_in_list += field_name+key_value_delimiter+' '+field_value+"\n";						
+						}
+					} else {
+						dbg("Field is NOT a select field:"+field_name);
+						// assign the value
+						field.val(field_value);						
+					}
 					dbg('[populate_field_values] '+fieldId+'.val() POST: '+field.val());
+				} else {
+					dbg('Field not found in DOM:' +field_name);
+					// record all fields that we couldn't find the in DOM so we can inform the user
+					fields_not_found_in_DOM += field_name+key_value_delimiter+' '+field_value+"\n";
 				}
+			}
+		}
+		// if there are any fields that we couldn't find in the DOM for updating... 
+		if (fields_not_found_in_DOM.length > 0) {
+			// get the label defined in the trac.ini
+			var field_not_found_for_updating_label = paste_parser_config['field_not_found_for_updating_label']
+			fields_not_found_in_DOM = field_not_found_for_updating_label + "\n"+ fields_not_found_in_DOM;  
+			// get the ID of the field being parsed
+			var field_to_parse_id = get_field_id(field_to_parse)
+			// get the field being parsed
+			var field = $('#'+field_to_parse_id);
+			if (field.length > 0) {
+				// if the field exists, then update it's value to include a
+				// note about the fields that could not be found 
+				field.val(field.val()+"\n\n"+fields_not_found_in_DOM);
+			}
+		}
+		// if there are any fields with an invalid value that we couldn't update 
+		if (values_not_in_list.length > 0) {
+			// get the label defined in the trac.ini
+			var invalid_field_values_not_in_list_label = paste_parser_config['invalid_field_values_not_in_list_label']
+			values_not_in_list = invalid_field_values_not_in_list_label + "\n"+ values_not_in_list;
+			// get the ID of the field being parsed
+			var field_to_parse_id = get_field_id(field_to_parse)
+			// get the field being parsed
+			var field = $('#'+field_to_parse_id);
+			if (field.length > 0) {
+				// if the field exists, then update it's value to include a
+				// note about the invalid values that could not be assigned 
+				field.val(field.val()+"\n\n"+values_not_in_list);
 			}
 		}
 	}
@@ -455,12 +602,15 @@ jQuery(document).ready(function ($) {
 			// the associative array (an object) of key/value pairs parsed from the given string of lines
 			var key_values = parse_key_values(text_to_parse, key_value_delimiter, ignore_pattern, key_value_end_pattern);
         	
-        	//the associative array (an object) of mapped key/value pairs
+			//the associative array (an object) of mapped key/value pairs
 			var mapped_key_values = map_key_values(key_values, xrefs);
 
         	//translate the values of each key/value pair using static values or JavaScript as defined in the xrefs
 			translate_embedded_key_values(mapped_key_values, xrefs);
         	dbg('[translate_embedded_key_values]: mapped_key_values=', mapped_key_values);
+
+			//convert values as per the conversions rules in the trac.ini
+			convert_field_value(mapped_key_values, xrefs);
 
 	        //populate the fields in the DOM with the new values generated using the cross-reference
         	populate_field_values(mapped_key_values);

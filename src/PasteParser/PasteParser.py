@@ -67,6 +67,12 @@ class PasteParser(Component):
                attempt to parse the matched text based on the the definitions in 
                this config and populate the resulting values into the related ticket fields.""")
 
+    field_not_found_for_updating_label = Option('paste-parser', 'field_not_found_for_updating_label',
+        doc="""Label inserted into the paste-field to identify fields that could not be found in the DOM to be updated.""")
+
+    invalid_field_values_not_in_list_label = Option('paste-parser', 'invalid_field_values_not_in_list_label',
+        doc="""Label inserted into the paste-field to identify field values that could not be assigned because the value is not in the defined SELECT list of OPTIONS.""")
+
     key_value_delimiter = Option('paste-parser', 'key_value_delimiter',
         doc="""This is the delimiter that will be appended to all given 'source_key' strings (the source line attribute label)
         when attempting to match field labels in the pasted designated field text.""")
@@ -142,6 +148,8 @@ class PasteParser(Component):
                 'field_name_to_id_match':   self.field_name_to_id_match,
                 'field_name_to_id_replace': self.field_name_to_id_replace,
                 'key_value_end_pattern':    self.key_value_end_pattern,                
+                'field_not_found_for_updating_label':    self.field_not_found_for_updating_label,                
+                'invalid_field_values_not_in_list_label':    self.invalid_field_values_not_in_list_label,                
                 'debug_on': self.debug_on,
                 'xrefs': self._get_xref()
                 }
